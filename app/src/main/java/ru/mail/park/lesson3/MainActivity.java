@@ -1,6 +1,7 @@
 package ru.mail.park.lesson3;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
@@ -25,13 +26,12 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView text1;
     private TextView text2;
-
+    SharedPreferences sPref;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         findViewById(R.id.open_activity).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -41,16 +41,19 @@ public class MainActivity extends AppCompatActivity {
 
         text1 = (TextView) findViewById(R.id.text1);
         text2 = (TextView) findViewById(R.id.text2);
+        sPref = getPreferences(MODE_PRIVATE);
+        String saved1 = sPref.getString("text1", "Click me");
+        String saved2 = sPref.getString("text2", "Click me");
 
         if (UrlDownloader.getInstance().getCache().get(URLs[0]) != null) {
             text1.setText(UrlDownloader.getInstance().getCache().get(URLs[0]));
         } else {
-            text1.setText("Click me");
+            text1.setText(saved1);
         }
         if (UrlDownloader.getInstance().getCache().get(URLs[1]) != null) {
             text2.setText(UrlDownloader.getInstance().getCache().get(URLs[1]));
         } else {
-            text2.setText("Click me");
+            text2.setText(saved2);
         }
 
         text1.setOnClickListener(new View.OnClickListener() {
@@ -73,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
                 text1.setText("Click me");
                 text2.setText("Click me");
                 UrlDownloader.getInstance().clearCache();
+                getPreferences(MODE_PRIVATE).edit().clear().apply();
             }
         });
 
@@ -86,14 +90,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadFromUrl(String url) {
         textViewForUrl(url).setText("Loading...");
+        getPreferences(MODE_PRIVATE).edit().putString(textViewForUrl(url).toString(), "Loading...").apply();
         UrlDownloader.getInstance().load(url);
     }
 
     private void onTextLoaded(String url, String stringFromUrl) {
         if (stringFromUrl == null) {
             stringFromUrl = "Data unavailable";
-            UrlDownloader.getInstance().getCache().put(url, stringFromUrl);
+            getPreferences(MODE_PRIVATE).edit().putString(textViewForUrl(url).toString(),"Data unavailable").apply();
         }
+        getPreferences(MODE_PRIVATE).edit().remove(textViewForUrl(url).toString()).apply();
         Toast.makeText(MainActivity.this, stringFromUrl, Toast.LENGTH_SHORT).show();
         textViewForUrl(url).setText(stringFromUrl);
     }
@@ -105,5 +111,18 @@ public class MainActivity extends AppCompatActivity {
             return text2;
         }
         throw new IllegalArgumentException("Unknown url: " + url);
+    }
+
+    protected  void saveState() {
+        SharedPreferences.Editor ed = getPreferences(MODE_PRIVATE).edit();
+        ed.putString("text1", text1.getText().toString());
+        ed.putString("text2", text2.getText().toString());
+        ed.apply();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        saveState();
     }
 }

@@ -37,7 +37,7 @@ public class UrlDownloader {
 
     public void load(final String url) {
         String cachedResult = cache.get(url);
-        if ((cachedResult != null) && !(cachedResult.equals("Data unavailable"))) {
+        if (cachedResult != null) {
             callback.onLoaded(url, cachedResult);
             return;
         }
@@ -72,7 +72,6 @@ public class UrlDownloader {
 
     private String loadInternal(String url) throws IOException {
         try {
-            cache.put(url, "Loading...");
             Thread.sleep(5000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
